@@ -198,6 +198,10 @@ void NeuralNetwork::train(const TrainingData &data, uint32_t numRuns) {
 
     feedForward(input);
     propBack(target);
+
+    #ifdef ESP8266
+      yield();
+    #endif
   }
 }
 

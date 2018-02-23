@@ -5,7 +5,7 @@
 
 #define TOPOLOGY     {2, 4, 1}
 #define LEARNINGRATE  0.15
-#define MOMENTUM      0.3
+#define MOMENTUM      0.5
 
 
 NeuralNetwork net(TOPOLOGY);

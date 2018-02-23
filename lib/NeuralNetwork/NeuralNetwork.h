@@ -82,6 +82,7 @@ class NeuralNetwork {
   void begin(double);
   void begin(double, double);
 
+  double getError   (void) const { return _error;     }
   double getAvgError(void) const { return _rAvgError; }
 
   void feedForward(const Table &);
