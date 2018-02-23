@@ -90,6 +90,9 @@ NeuralNetwork::NeuralNetwork(const vector<uint32_t> &topology) {
     for (size_t n = 0; n <= topology[l]; n++) {
       _layers.back().push_back(Neuron(numOutputs, n));
     }
+
+    // Set value of bias neuron to 1.0
+    _layers.back().back().setValue(1.0);
   }
 }
 
