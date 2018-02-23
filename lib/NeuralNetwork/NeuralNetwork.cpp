@@ -40,13 +40,13 @@ void Neuron::calcGrad(double target) {
 
 void Neuron::calcHiddenGrad(const Layer &nextLayer) {
 
-  double sum = 0.0;
+  double sumDOW = 0.0;
 
   for (size_t n = 0; n < nextLayer.size() - 1; n++) {
-    sum += _connections[n].weight * nextLayer[n]._gradient;
+    sumDOW += _connections[n].weight * nextLayer[n]._gradient;
   }
 
-  _gradient = sum * Neuron::activationD(_value);
+  _gradient  = sumDOW * Neuron::activationD(_value);
 }
 
 
@@ -110,7 +110,7 @@ void NeuralNetwork::feedForward(const vector<double> &input) {
     _layers[0][i].setValue(input[i]);
   }
 
-  for (size_t l = 0; l < _layers.size(); l++) {
+  for (size_t l = 1; l < _layers.size(); l++) {
 
     Layer &prevLayer = _layers[l - 1];
 
@@ -131,7 +131,7 @@ void NeuralNetwork::propBack(const vector<double> &target) {
   for (size_t n = 0; n < outputLayer.size() - 1; n++) {
 
     double delta = target[n] - outputLayer[n].getValue();
-    _error += delta*delta;
+    _error += delta * delta;
   }
 
   _error /= outputLayer.size() - 1;
@@ -152,7 +152,7 @@ void NeuralNetwork::propBack(const vector<double> &target) {
 
   // Calc gradients in hidden layers
 
-  for (size_t l = _layers.size() - 2; l < 0; l--) {
+  for (size_t l = _layers.size() - 2; l > 0; l--) {
 
     Layer &hiddenLayer = _layers[l];
     Layer &nextLayer   = _layers[l + 1];
@@ -179,13 +179,15 @@ void NeuralNetwork::propBack(const vector<double> &target) {
 
 vector<double> NeuralNetwork::getOutput() const {
 
-  vector<double> results;
+  vector<double> output;
 
   for (size_t n = 0; n < _layers.back().size() - 1; n++) {
-    results.push_back(_layers.back()[n].getValue());
+
+    double value = _layers.back()[n].getValue();
+    output.push_back(value);
   }
 
-  return results;
+  return output;
 }
 
 // *****************************************************************************
