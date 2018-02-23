@@ -7,15 +7,26 @@
   using namespace std;
 
 
+// -----------------------------------------------------------------------------
+//                      Standard values for static variables
+// -----------------------------------------------------------------------------
+   #define stdETA           0.15       // Neuron learning rate
+   #define stdALPHA         0.0        // Neuron learning momentum
+   #define stdSMOOTHING    20.0        // # of samples to average rAvgError over
+// -----------------------------------------------------------------------------
+
 
 
 // ********************************* TYPEDEFS **********************************
 
 struct Connection;
-typedef vector<Connection> Connections;
+typedef vector<Connection>    Connections;
 
 class Neuron;
-typedef vector<Neuron> Layer;
+typedef vector<Neuron>        Layer;
+
+typedef vector<double>        Table;
+typedef vector<vector<Table>> TrainingData;
 
 // *****************************************************************************
 
@@ -61,20 +72,23 @@ class Neuron {
 class NeuralNetwork {
 
   vector<Layer> _layers;                              // layers[#layer][#neuron]
-  double _error, _rAvgError, _rAvgSmoothing = 100.0;
+  double        _error, _rAvgError = 0.5;
+  static double _rAvgSmoothing;
 
  public:
 
   NeuralNetwork(const vector<uint32_t> &);
 
+  void begin(double);
   void begin(double, double);
-
-  void feedForward(const vector<double> &);
-  void propBack   (const vector<double> &);
 
   double getAvgError(void) const { return _rAvgError; }
 
-  vector<double> getOutput(void) const;
+  void feedForward(const Table &);
+  void propBack   (const Table &);
+  void train      (const TrainingData &, uint32_t);
+
+  Table getOutput(void) const;
 };
 
 // *****************************************************************************

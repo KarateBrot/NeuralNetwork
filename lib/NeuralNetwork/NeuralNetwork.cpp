@@ -4,8 +4,8 @@
 
 // ********************************** NEURON ***********************************
 
-double Neuron::eta   = 0.15;
-double Neuron::alpha = 0.5;
+double Neuron::eta   = stdETA;
+double Neuron::alpha = stdALPHA;
 
 
 Neuron::Neuron(uint32_t numOutputs, uint32_t index) {
@@ -24,8 +24,8 @@ void Neuron::feedForward(const Layer &prevLayer) {
 
   double sum = 0.0;
 
-  for (size_t n = 0; n < prevLayer.size(); n++) {
-    sum += prevLayer[n].getValue() * prevLayer[n]._connections[_index].weight;
+  for (size_t neuron = 0; neuron < prevLayer.size(); neuron++) {
+    sum += prevLayer[neuron].getValue() * prevLayer[neuron]._connections[_index].weight;
   }
 
   _value = Neuron::activation(sum);
@@ -74,6 +74,9 @@ void Neuron::updateWeights(Layer &prevLayer) {
 
 // ********************************* NETWORK ***********************************
 
+double NeuralNetwork::_rAvgSmoothing = stdSMOOTHING;
+
+
 NeuralNetwork::NeuralNetwork(const vector<uint32_t> &topology) {
 
   uint32_t numLayers = topology.size();
@@ -97,6 +100,12 @@ NeuralNetwork::NeuralNetwork(const vector<uint32_t> &topology) {
 }
 
 
+void NeuralNetwork::begin(double learningRate) {
+
+  Neuron::eta = learningRate;
+}
+
+
 void NeuralNetwork::begin(double learningRate, double momentum) {
 
   Neuron::eta   = learningRate;
@@ -104,10 +113,10 @@ void NeuralNetwork::begin(double learningRate, double momentum) {
 }
 
 
-void NeuralNetwork::feedForward(const vector<double> &input) {
+void NeuralNetwork::feedForward(const Table &input) {
 
-  for (size_t i = 0; i < input.size(); i++) {
-    _layers[0][i].setValue(input[i]);
+  for (size_t n = 0; n < input.size(); n++) {
+    _layers[0][n].setValue(input[n]);
   }
 
   for (size_t l = 1; l < _layers.size(); l++) {
@@ -121,7 +130,7 @@ void NeuralNetwork::feedForward(const vector<double> &input) {
 }
 
 
-void NeuralNetwork::propBack(const vector<double> &target) {
+void NeuralNetwork::propBack(const Table &target) {
 
   // Calc overall network error (RMS)
 
@@ -139,6 +148,7 @@ void NeuralNetwork::propBack(const vector<double> &target) {
 
 
   // Calc recent average error (rAvgError)
+  // It is just a measure to see how good the network is performing
 
   _rAvgError = (_rAvgError * _rAvgSmoothing + _error) / (_rAvgSmoothing + 1.0);
 
@@ -177,9 +187,24 @@ void NeuralNetwork::propBack(const vector<double> &target) {
 }
 
 
-vector<double> NeuralNetwork::getOutput() const {
+void NeuralNetwork::train(const TrainingData &data, uint32_t numRuns) {
 
-  vector<double> output;
+  for (size_t run = 0; run < numRuns; run++) {
+
+    uint32_t num = random(0, data.size());
+
+    Table input  = data[num][0];
+    Table target = data[num][1];
+
+    feedForward(input);
+    propBack(target);
+  }
+}
+
+
+Table NeuralNetwork::getOutput() const {
+
+  Table output;
 
   for (size_t n = 0; n < _layers.back().size() - 1; n++) {
 
