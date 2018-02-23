@@ -3,14 +3,27 @@
 #include <TrainingData.h>
 
 
-#define TOPOLOGY     {2, 4, 1}
+#define TOPOLOGY     {16, 32, 8, 2}
 #define LEARNINGRATE  0.15
 #define MOMENTUM      0.5
 
 
 NeuralNetwork net(TOPOLOGY);
 
-uint32_t pass = 0;
+
+Table line = {
+  -1, -1, -1, -1,
+  -1, -1, -1,  1,
+  -1, -1,  1, -1,
+  -1,  1, -1, -1
+};
+
+Table circle = {
+  -1,  1,  1, -1,
+   1, -1, -1,  1,
+   1, -1, -1,  1,
+  -1,  1,  1, -1
+};
 
 
 void setup() {
@@ -19,37 +32,20 @@ void setup() {
   Serial.println(" ");
 
   net.begin(LEARNINGRATE, MOMENTUM);
-
-  // Train network to become xor gate
-  net.train(trainingData_xor, 2000);
+  net.train(trainingData_img, 1000);
 }
 
 void loop() {
 
-  vector<double> input, target, output;
-    uint8_t num = random(0, 4);
+  Serial.println("- - - - - - -");
 
-    switch (num) {
-      case 0: input = {0, 0}; target = {0}; break;
-      case 1: input = {0, 1}; target = {1}; break;
-      case 2: input = {1, 0}; target = {1}; break;
-      case 3: input = {1, 1}; target = {0}; break;
-    }
+  net.feedForward(circle);
+  Table output = net.getOutput();
+  Serial.print(output[0]); Serial.print(" | "); Serial.println(output[1]);
 
-    net.feedForward(input);
+  net.feedForward(line);
+  output = net.getOutput();
+  Serial.print(output[0]); Serial.print(" | "); Serial.println(output[1]);
 
-    output = net.getOutput();
-
-    Serial.print("- - - - "); Serial.print("Pass "); Serial.print(pass); Serial.println(" - - - -");
-    Serial.print("Input  = { "); Serial.print(input[0]); Serial.print(" | "); Serial.print(input[1]); Serial.println(" }");
-    Serial.print("Target =   "); Serial.println(target[0]);
-    Serial.print("Actual =   "); Serial.println(output[0]);
-    Serial.print("AvgErr =   "); Serial.println(net.getAvgError(), 5);
-    Serial.println("- - - - - - - - - - - - -"); Serial.println();
-
-    net.propBack(target);
-
-    delay(2000);
-
-  pass++;
+  delay(2000);
 }
