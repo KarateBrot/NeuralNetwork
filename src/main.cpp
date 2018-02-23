@@ -3,7 +3,7 @@
 
 
 #define LEARNINGRATE  0.15
-#define MOMENTUM      0.0
+#define MOMENTUM      0.3
 #define TOPOLOGY     {2, 4, 1}
 
 
@@ -13,13 +13,14 @@ uint32_t pass = 0;
 
 void setup() {
 
-  Serial.begin(9600);
   net.begin(LEARNINGRATE, MOMENTUM);
+  Serial.begin(9600);
+  Serial.println(" ");
 
-  for (size_t i = 0; i < 10000; i++) {
+  for (size_t i = 0; i < 20000; i++) {
 
     vector<double> input, target, output;
-    uint8_t num = random(0, 3);
+    uint8_t num = random(0, 4);
 
     switch (num) {
       case 0: input = {0, 0}; target = {0}; break;
@@ -42,7 +43,7 @@ void loop() {
   // TODO: training function
 
   vector<double> input, target, output;
-  uint8_t num = random(0, 3);
+  uint8_t num = random(0, 4);
 
   switch (num) {
     case 0: input = {0, 0}; target = {0}; break;
@@ -59,6 +60,7 @@ void loop() {
   Serial.print("Input  = { "); Serial.print(input[0]); Serial.print(" | "); Serial.print(input[1]); Serial.println(" }");
   Serial.print("Target =   "); Serial.println(target[0]);
   Serial.print("Actual =   "); Serial.println(output[0]);
+  Serial.print("AvgErr =   "); Serial.println(net.getAvgError(), 5);
   Serial.println("- - - - - - - - - - - - -"); Serial.println();
 
   net.propBack(target);

@@ -34,7 +34,7 @@ class Neuron {
   double      _gradient;
 
   static double activation (double x) { return tanh(x); }
-  static double activationD(double x) { return 1.0/(cosh(x)*cosh(x)); }
+  static double activationD(double x) { return 1 - x*x; } // 1.0/(cosh(x)*cosh(x))
 
  public:
 
@@ -60,8 +60,8 @@ class Neuron {
 
 class NeuralNetwork {
 
-  vector<Layer> _layers; // layers[#layer][#neuron]
-  double _error, _rAvgError, _rAvgSmoothing;
+  vector<Layer> _layers;                              // layers[#layer][#neuron]
+  double _error, _rAvgError, _rAvgSmoothing = 100.0;
 
  public:
 
@@ -71,6 +71,8 @@ class NeuralNetwork {
 
   void feedForward(const vector<double> &);
   void propBack   (const vector<double> &);
+
+  double getAvgError(void) const { return _rAvgError; }
 
   vector<double> getOutput(void) const;
 };
