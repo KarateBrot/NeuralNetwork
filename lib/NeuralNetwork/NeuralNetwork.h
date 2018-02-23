@@ -3,8 +3,6 @@
 
 
 #include <Arduino.h>
-// #define NDEBUG // uncomment for disabling assert()
-#include <cassert>
 #include <vector>
   using namespace std;
 
@@ -13,14 +11,11 @@
 
 // ********************************* TYPEDEFS **********************************
 
-typedef vector<double>   Table;
-typedef vector<uint32_t> Topology;
+struct Connection;
+typedef vector<Connection> Connections;
 
 class Neuron;
 typedef vector<Neuron> Layer;
-
-struct Connection;
-typedef vector<Connection> Connections;
 
 // *****************************************************************************
 
@@ -33,27 +28,27 @@ struct Connection { double weight, deltaWeight; };
 
 class Neuron {
 
-  static double eta, alpha;
-
-  double      m_outputVal;
-  Connections m_outputWeights;
-  uint32_t    m_index;
-  double      m_gradient;
+  double      _value;
+  Connections _connections;
+  uint32_t    _index;
+  double      _gradient;
 
   static double activation (double x) { return tanh(x); }
   static double activationD(double x) { return 1.0/(cosh(x)*cosh(x)); }
 
  public:
 
+  static double eta, alpha;           // eta: "learning rate", alpha: "momentum"
+
   Neuron(uint32_t, uint32_t);
 
-  void   setOutput(double v)       { m_outputVal = v;    }
-  double getOutput(void)     const { return m_outputVal; }
+  void   setValue(double v)       { _value = v;    }
+  double getValue(void)     const { return _value; }
 
-  void feedForward(const Layer &);
-  void calcGrad(double);
+  void feedForward   (const Layer &);
+  void calcGrad      (double);
   void calcHiddenGrad(const Layer &);
-  void updateInputWeights(Layer &);
+  void updateWeights (Layer &);
 };
 
 // *****************************************************************************
@@ -65,16 +60,19 @@ class Neuron {
 
 class NeuralNetwork {
 
-  vector<Layer> m_layers; // structure[layerNum][neuronNum]
-  double m_error, m_rAvgError, m_rAvgSmoothing;
+  vector<Layer> _layers; // layers[#layer][#neuron]
+  double _error, _rAvgError, _rAvgSmoothing;
 
  public:
 
-  NeuralNetwork(const Topology &);
+  NeuralNetwork(const vector<uint32_t> &);
 
-  void feedForward(const Table &);
-  void backProp   (const Table &);
-  void getResults (      Table &) const;
+  void begin(double, double);
+
+  void feedForward(const vector<double> &);
+  void propBack   (const vector<double> &);
+
+  vector<double> getOutput(void) const;
 };
 
 // *****************************************************************************

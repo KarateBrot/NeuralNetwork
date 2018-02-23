@@ -12,11 +12,11 @@ Neuron::Neuron(uint32_t numOutputs, uint32_t index) {
 
   for (size_t connection = 0; connection < numOutputs; connection++) {
 
-    m_outputWeights.push_back(Connection());
-    m_outputWeights.back().weight = random(0, 1000)/1000.0;
+    _connections.push_back(Connection());
+    _connections.back().weight = random(0, 1000)/1000.0;
   }
 
-  m_index = index;
+  _index = index;
 }
 
 
@@ -25,16 +25,16 @@ void Neuron::feedForward(const Layer &prevLayer) {
   double sum = 0.0;
 
   for (size_t n = 0; n < prevLayer.size(); n++) {
-    sum += prevLayer[n].getOutput() * prevLayer[n].m_outputWeights[m_index].weight;
+    sum += prevLayer[n].getValue() * prevLayer[n]._connections[_index].weight;
   }
 
-  m_outputVal = Neuron::activation(sum);
+  _value = Neuron::activation(sum);
 }
 
 
 void Neuron::calcGrad(double target) {
 
-  m_gradient = (target - m_outputVal) * Neuron::activationD(m_outputVal);
+  _gradient = (target - _value) * Neuron::activationD(_value);
 }
 
 
@@ -43,27 +43,27 @@ void Neuron::calcHiddenGrad(const Layer &nextLayer) {
   double sum = 0.0;
 
   for (size_t n = 0; n < nextLayer.size() - 1; n++) {
-    sum += m_outputWeights[n].weight * nextLayer[n].m_gradient;
+    sum += _connections[n].weight * nextLayer[n]._gradient;
   }
 
-  m_gradient = sum * Neuron::activationD(m_outputVal);
+  _gradient = sum * Neuron::activationD(_value);
 }
 
 
-void Neuron::updateInputWeights(Layer &prevLayer) {
+void Neuron::updateWeights(Layer &prevLayer) {
 
   for (size_t n = 0; n < prevLayer.size(); n++) {
 
     Neuron &neuron = prevLayer[n];
 
-    double oldDeltaWeight = neuron.m_outputWeights[m_index].deltaWeight;
+    double oldDeltaWeight = neuron._connections[_index].deltaWeight;
 
     double newDeltaWeight =
-      eta   * neuron.getOutput() * m_gradient +
+      eta   * neuron.getValue() * _gradient +
       alpha * oldDeltaWeight;
 
-    neuron.m_outputWeights[m_index].deltaWeight = newDeltaWeight;
-    neuron.m_outputWeights[m_index].weight     += newDeltaWeight;
+    neuron._connections[_index].deltaWeight = newDeltaWeight;
+    neuron._connections[_index].weight     += newDeltaWeight;
   }
 }
 
@@ -74,65 +74,70 @@ void Neuron::updateInputWeights(Layer &prevLayer) {
 
 // ********************************* NETWORK ***********************************
 
-NeuralNetwork::NeuralNetwork(const Topology &topology) {
+NeuralNetwork::NeuralNetwork(const vector<uint32_t> &topology) {
 
   uint32_t numLayers = topology.size();
 
-  for (size_t layer = 0; layer < numLayers; layer++) {
+  for (size_t l = 0; l < numLayers; l++) {
 
-    m_layers.push_back(Layer());
+    _layers.push_back(Layer());
 
     uint32_t numOutputs;
-    layer == topology.size() - 1
+    l == topology.size() - 1
       ? numOutputs = 0
-      : numOutputs = topology[layer + 1];
+      : numOutputs = topology[l + 1];
 
-    for (size_t neuron = 0; neuron <= topology[layer]; neuron++) {
-      m_layers.back().push_back(Neuron(numOutputs, neuron));
+    for (size_t n = 0; n <= topology[l]; n++) {
+      _layers.back().push_back(Neuron(numOutputs, n));
     }
   }
 }
 
 
-void NeuralNetwork::feedForward(const Table &input) {
+void NeuralNetwork::begin(double learningRate, double momentum) {
 
-  assert(input.size() == m_layers[0].size() - 1);
+  Neuron::eta   = learningRate;
+  Neuron::alpha = momentum;
+}
+
+
+void NeuralNetwork::feedForward(const vector<double> &input) {
 
   for (size_t i = 0; i < input.size(); i++) {
-    m_layers[0][i].setOutput(input[i]);
+    _layers[0][i].setValue(input[i]);
   }
 
-  for (size_t layer = 0; layer < m_layers.size(); layer++) {
+  for (size_t l = 0; l < _layers.size(); l++) {
 
-    Layer &prevLayer = m_layers[layer - 1];
+    Layer &prevLayer = _layers[l - 1];
 
-    for (size_t n = 0; n < m_layers[layer].size() - 1; n++) {
-      m_layers[layer][n].feedForward(prevLayer);
+    for (size_t n = 0; n < _layers[l].size() - 1; n++) {
+      _layers[l][n].feedForward(prevLayer);
     }
   }
 }
 
 
-void NeuralNetwork::backProp(const Table &target) {
+void NeuralNetwork::propBack(const vector<double> &target) {
 
   // Calc overall network error (RMS)
 
-  Layer &outputLayer = m_layers.back();
-  m_error = 0.0;
+  Layer &outputLayer = _layers.back();
+  _error = 0.0;
 
   for (size_t n = 0; n < outputLayer.size() - 1; n++) {
 
-    double delta = target[n] - outputLayer[n].getOutput();
-    m_error += delta*delta;
+    double delta = target[n] - outputLayer[n].getValue();
+    _error += delta*delta;
   }
 
-  m_error /= outputLayer.size() - 1;
-  m_error  = sqrt(m_error);
+  _error /= outputLayer.size() - 1;
+  _error  = sqrt(_error);
 
 
   // Calc recent average error (rAvgError)
 
-  m_rAvgError = (m_rAvgError * m_rAvgSmoothing + m_error) / (m_rAvgSmoothing + 1.0);
+  _rAvgError = (_rAvgError * _rAvgSmoothing + _error) / (_rAvgSmoothing + 1.0);
 
 
   // Calc gradients in output layer
@@ -144,10 +149,10 @@ void NeuralNetwork::backProp(const Table &target) {
 
   // Calc gradients in hidden layers
 
-  for (size_t layer = m_layers.size() - 2; layer < 0; layer--) {
+  for (size_t l = _layers.size() - 2; l < 0; l--) {
 
-    Layer &hiddenLayer = m_layers[layer];
-    Layer &nextLayer   = m_layers[layer + 1];
+    Layer &hiddenLayer = _layers[l];
+    Layer &nextLayer   = _layers[l + 1];
 
     for (size_t n = 0; n < hiddenLayer.size(); n++) {
       hiddenLayer[n].calcHiddenGrad(nextLayer);
@@ -155,27 +160,29 @@ void NeuralNetwork::backProp(const Table &target) {
   }
 
 
-  // Update connection weights from output layer to first hidden layer
+  // Update connection weights
 
-  for (size_t l = m_layers.size() - 1; l > 0; l--) {
+  for (size_t l = _layers.size() - 1; l > 0; l--) {
 
-    Layer &layer     = m_layers[l];
-    Layer &prevLayer = m_layers[l - 1];
+    Layer &layer     = _layers[l];
+    Layer &prevLayer = _layers[l - 1];
 
     for (size_t n = 0; n < layer.size() - 1; n++) {
-      layer[n].updateInputWeights(prevLayer);
+      layer[n].updateWeights(prevLayer);
     }
   }
 }
 
 
-void NeuralNetwork::getResults(Table &result) const {
+vector<double> NeuralNetwork::getOutput() const {
 
-  result.clear();
+  vector<double> results;
 
-  for (size_t n = 0; n < m_layers.back().size() - 1; n++) {
-    result.push_back(m_layers.back()[n].getOutput());
+  for (size_t n = 0; n < _layers.back().size() - 1; n++) {
+    results.push_back(_layers.back()[n].getValue());
   }
+
+  return results;
 }
 
 // *****************************************************************************
