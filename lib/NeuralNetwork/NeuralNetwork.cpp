@@ -170,7 +170,6 @@ void NeuralNetwork::propBack(const Table &target) {
 
 
   // Calc recent average error (rAvgError)
-  // It is just a measure to see how good the network is performing
 
   _rAvgError = (_rAvgError * _rAvgSmoothing + _error) / (_rAvgSmoothing + 1.0);
 
@@ -211,20 +210,51 @@ void NeuralNetwork::propBack(const Table &target) {
 
 void NeuralNetwork::train(const TrainingData &data, uint32_t numRuns) {
 
-  for (size_t run = 0; run < numRuns; run++) {
+  Serial.println("-- TRAINING SESSION --"); Serial.println();
 
-    uint32_t num = random(0, data.size());
+  for (size_t run = 0; run < 10; run++) {
 
-    Table input  = data[num][0];
-    Table target = data[num][1];
+    // Progress indicator --------------------------------------
 
-    feedForward(input);
-    propBack(target);
+    Serial.print("  [");
+    for (size_t i = 0;      i < run; i++) { Serial.print("#"); }
+    for (size_t i = 10-run; i > 0;   i--) { Serial.print("_"); }
+    Serial.print("]");
 
-    #ifdef ESP8266
-      yield();
-    #endif
+    run == 0
+      ? Serial.print("   ")
+      : Serial.print("  ");
+
+    Serial.print(10*run);
+    Serial.println(" %");
+
+    // ---------------------------------------------------------
+
+    for (size_t run = 0; run < numRuns/10; run++) {
+
+      uint32_t num = random(0, data.size()/2);
+
+      Table input  = data[2*num];
+      Table target = data[2*num + 1];
+
+      // Training sample
+      feedForward(input);
+      propBack(target);
+
+      #ifdef ESP8266
+        yield();
+      #endif
+    }
   }
+
+  Serial.println("  [##########] 100 %"  );
+  Serial.println(                        );
+  Serial.println("-------- DONE --------");
+  Serial.print  ("    PASSES = "         ); Serial.println(numRuns      );
+  Serial.print  ("     ERROR = "         ); Serial.println(_error,     5);
+  Serial.print  (" rAvgERROR = "         ); Serial.println(_rAvgError, 5);
+  Serial.println("----------------------");
+  Serial.println(                        );
 }
 
 
@@ -255,9 +285,14 @@ void NeuralNetwork::memorize() {
   for (size_t i = 0; i < memory.size(); i++) {
 
     Serial.print(memory[i], 5);
+
     i == memory.size() - 1
       ? Serial.print(" ")
       : Serial.print(", ");
+
+    #ifdef ESP8266
+      yield();
+    #endif
   }
 
   Serial.print("}; // topology = { ");
@@ -265,6 +300,7 @@ void NeuralNetwork::memorize() {
   for (size_t i = 0; i < _topology.size(); i++) {
 
     Serial.print(_topology[i]);
+
     i == _topology.size() - 1
       ? Serial.print(" ")
       : Serial.print(", ");

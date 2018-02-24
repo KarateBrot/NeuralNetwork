@@ -20,13 +20,13 @@
 // ********************************* TYPEDEFS **********************************
 
 struct Connection;
-typedef vector<Connection>    Connections;
+typedef vector<Connection> Connections;
 
 class Neuron;
-typedef vector<Neuron>        Layer;
+typedef vector<Neuron>     Layer;
 
-typedef vector<double>        Table;
-typedef vector<vector<Table>> TrainingData;
+typedef vector<double>     Table;
+typedef vector<Table>      TrainingData;
 
 // *****************************************************************************
 
