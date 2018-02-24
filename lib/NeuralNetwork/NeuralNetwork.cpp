@@ -20,6 +20,26 @@ Neuron::Neuron(uint32_t numOutputs, uint32_t index) {
 }
 
 
+Table Neuron::getWeights() const {
+
+  Table weights;
+
+  for (size_t w = 0; w < _connections.size(); w++) {
+    weights.push_back(_connections[w].weight);
+  }
+
+  return weights;
+}
+
+
+void Neuron::setWeights(Table &weights) {
+
+  for (size_t w = 0; w < _connections.size(); w++) {
+    _connections[w].weight = weights[w];
+  }
+}
+
+
 void Neuron::feedForward(const Layer &prevLayer) {
 
   double sum = 0.0;
@@ -97,6 +117,8 @@ NeuralNetwork::NeuralNetwork(const vector<uint32_t> &topology) {
     // Set value of bias neuron to 1.0
     _layers.back().back().setValue(1.0);
   }
+
+  _topology = topology;
 }
 
 
@@ -202,6 +224,77 @@ void NeuralNetwork::train(const TrainingData &data, uint32_t numRuns) {
     #ifdef ESP8266
       yield();
     #endif
+  }
+}
+
+
+void NeuralNetwork::memorize() {
+
+  // Collect weight of every neuronal connection in the network
+
+  Table memory;
+
+  for (size_t l = 0; l < _layers.size() - 1; l++) {
+
+    for (size_t n = 0; n < _layers[l].size(); n++) {    // including bias neuron
+
+      Neuron   &neuron    = _layers[l][n];
+      uint32_t numWeights = neuron.getWeights().size();
+
+      for (size_t w = 0; w < numWeights; w++) {
+        memory.push_back(neuron.getWeights()[w]);
+      }
+    }
+  }
+
+
+  // Write weights & topology to serial port
+
+  Serial.print("{ ");
+
+  for (size_t i = 0; i < memory.size(); i++) {
+
+    Serial.print(memory[i], 5);
+    i == memory.size() - 1
+      ? Serial.print(" ")
+      : Serial.print(", ");
+  }
+
+  Serial.print("}; // topology = { ");
+
+  for (size_t i = 0; i < _topology.size(); i++) {
+
+    Serial.print(_topology[i]);
+    i == _topology.size() - 1
+      ? Serial.print(" ")
+      : Serial.print(", ");
+  }
+
+  Serial.println("}");
+}
+
+
+void NeuralNetwork::recall(const Table &memory) {
+
+  uint32_t tempIndex = 0;
+
+  for (size_t l = 0; l < _layers.size() - 1; l++) {
+
+    for (size_t n = 0; n < _layers[l].size(); n++) {    // including bias neuron
+
+      Neuron   &neuron    = _layers[l][n];
+      uint32_t numWeights = neuron.getWeights().size();
+
+      Table weights;
+
+      for (size_t w = 0; w < numWeights; w++) {
+
+        weights.push_back(memory[tempIndex]);
+        tempIndex++;
+      }
+
+      neuron.setWeights(weights);
+    }
   }
 }
 

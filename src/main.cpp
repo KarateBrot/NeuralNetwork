@@ -1,9 +1,11 @@
 #include <Arduino.h>
+
 #include <NeuralNetwork.h>
-#include <TrainingData.h>
+  #include <Exercises.h>
+  #include <Memories.h>
 
 
-#define TOPOLOGY     {16, 32, 8, 2}
+#define TOPOLOGY     {2, 4, 1}
 #define LEARNINGRATE  0.15
 #define MOMENTUM      0.5
 
@@ -32,20 +34,13 @@ void setup() {
   Serial.println(" ");
 
   net.begin(LEARNINGRATE, MOMENTUM);
-  net.train(trainingData_img, 1000);
+  net.recall(memory_xor_0404_20180224);
+  net.train(exercise_xor, 10000);
 }
 
 void loop() {
 
-  Serial.println("- - - - - - -");
-
-  net.feedForward(circle);
-  Table output = net.getOutput();
-  Serial.print(output[0]); Serial.print(" | "); Serial.println(output[1]);
-
-  net.feedForward(line);
-  output = net.getOutput();
-  Serial.print(output[0]); Serial.print(" | "); Serial.println(output[1]);
+  net.memorize();
 
   delay(2000);
 }

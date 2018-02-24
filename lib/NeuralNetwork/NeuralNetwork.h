@@ -11,7 +11,7 @@
 //                      Standard values for static variables
 // -----------------------------------------------------------------------------
    #define stdETA           0.15       // Neuron learning rate
-   #define stdALPHA         0.0        // Neuron learning momentum
+   #define stdALPHA         0.5        // Neuron learning momentum
    #define stdSMOOTHING    20.0        // # of samples to average rAvgError over
 // -----------------------------------------------------------------------------
 
@@ -53,8 +53,11 @@ class Neuron {
 
   Neuron(uint32_t, uint32_t);
 
-  void   setValue(double v)       { _value = v;    }
-  double getValue(void)     const { return _value; }
+  double getValue  (void)     const { return _value; }
+  void   setValue  (double v)       { _value = v;    }
+
+  Table getWeights(void) const;
+  void  setWeights(Table &);
 
   void feedForward   (const Layer &);
   void calcGrad      (double);
@@ -72,6 +75,9 @@ class Neuron {
 class NeuralNetwork {
 
   vector<Layer> _layers;                              // layers[#layer][#neuron]
+
+  vector<uint32_t> _topology;
+
   double        _error, _rAvgError = 0.5;
   static double _rAvgSmoothing;
 
@@ -82,14 +88,17 @@ class NeuralNetwork {
   void begin(double);
   void begin(double, double);
 
+  void feedForward(const Table &);
+  void propBack   (const Table &);
+
+  void train   (const TrainingData &, uint32_t);
+  void memorize(void);
+  void recall  (const Table &);
+
   double getError   (void) const { return _error;     }
   double getAvgError(void) const { return _rAvgError; }
 
-  void feedForward(const Table &);
-  void propBack   (const Table &);
-  void train      (const TrainingData &, uint32_t);
-
-  Table getOutput(void) const;
+  Table  getOutput  (void) const;
 };
 
 // *****************************************************************************

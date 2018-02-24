@@ -1,7 +1,7 @@
 #include <NeuralNetwork.h>
 
 // XOR gate
-TrainingData trainingData_xor({
+TrainingData exercise_xor({
 
   // input target
   { {0, 0}, {0} },
@@ -13,7 +13,7 @@ TrainingData trainingData_xor({
 
 
 // Image recognition
-TrainingData trainingData_img({
+TrainingData exercise_img({
 
   //  TARGET
   // { 1, -1} -> Circle
