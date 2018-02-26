@@ -45,7 +45,7 @@ class Neuron {
   double      _gradient;
 
   static double activation (double x) { return tanh(x); }
-  static double activationD(double x) { return 1 - x*x; } // 1.0/(cosh(x)*cosh(x))
+  static double activationD(double x) { return 1.0/(cosh(x)*cosh(x)); }
 
  public:
 
