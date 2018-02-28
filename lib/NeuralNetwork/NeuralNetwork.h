@@ -85,15 +85,15 @@ class NeuralNetwork {
 
   NeuralNetwork(const vector<uint32_t> &);
 
-  void begin(double);
-  void begin(double, double);
+  NeuralNetwork& begin(double);
+  NeuralNetwork& begin(double, double);
 
-  void feedForward(const Table &);
-  void propBack   (const Table &);
+  NeuralNetwork& feedForward(const Table &);
+  NeuralNetwork& propBack   (const Table &);
 
-  void train   (const TrainingData &, uint32_t);
-  void memorize(void);
-  void recall  (const Table &);
+  NeuralNetwork& train   (const TrainingData &, uint32_t);
+  NeuralNetwork& memorize(void);
+  NeuralNetwork& recall  (const Table &);
 
   double getError   (void) const { return _error;     }
   double getAvgError(void) const { return _rAvgError; }
