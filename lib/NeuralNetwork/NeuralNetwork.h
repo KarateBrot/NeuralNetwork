@@ -24,9 +24,10 @@ typedef vector<Connection> Connections;
 
 class Neuron;
 typedef vector<Neuron>     Layer;
+typedef vector<Layer>      Net;
 
-typedef vector<double>     Table;
-typedef vector<Table>      TrainingData;
+typedef vector<double>     List;
+typedef vector<List>       Table;
 
 // *****************************************************************************
 
@@ -53,11 +54,11 @@ class Neuron {
 
   Neuron(uint32_t, uint32_t);
 
-  double getValue  (void)     const { return _value; }
-  void   setValue  (double v)       { _value = v;    }
+  double getValue(void)     const { return _value; }
+  void   setValue(double v)       { _value = v;    }
 
-  Table getWeights(void) const;
-  void  setWeights(Table &);
+  List getWeights(void) const;
+  void setWeights(List &);
 
   void feedForward   (const Layer &);
   void calcGrad      (double);
@@ -74,7 +75,7 @@ class Neuron {
 
 class NeuralNetwork {
 
-  vector<Layer> _layers;                              // layers[#layer][#neuron]
+  Net _network;                                       // layers[#layer][#neuron]
 
   vector<uint32_t> _topology;
 
@@ -88,17 +89,19 @@ class NeuralNetwork {
   NeuralNetwork& begin(double);
   NeuralNetwork& begin(double, double);
 
-  NeuralNetwork& feedForward(const Table &);
-  NeuralNetwork& propBack   (const Table &);
+  NeuralNetwork& feedForward(const List &);
+  NeuralNetwork& propBack   (const List &);
 
-  NeuralNetwork& train   (const TrainingData &, uint32_t);
+  NeuralNetwork& train   (const Table &, uint32_t);
   NeuralNetwork& memorize(void);
-  NeuralNetwork& recall  (const Table &);
+  NeuralNetwork& recall  (const List &);
 
-  double getError   (void) const { return _error;     }
-  double getAvgError(void) const { return _rAvgError; }
+  vector<uint32_t> getTopology(void) const { return _topology;  }
+  double           getError   (void) const { return _error;     }
+  double           getAvgError(void) const { return _rAvgError; }
 
-  Table  getOutput  (void) const;
+  List getOutput(void) const;
+
 };
 
 // *****************************************************************************

@@ -20,9 +20,11 @@ Neuron::Neuron(uint32_t numOutputs, uint32_t index) {
 }
 
 
-Table Neuron::getWeights() const {
 
-  Table weights;
+
+List Neuron::getWeights() const {
+
+  List weights;
 
   for (size_t w = 0; w < _connections.size(); w++) {
     weights.push_back(_connections[w].weight);
@@ -32,12 +34,16 @@ Table Neuron::getWeights() const {
 }
 
 
-void Neuron::setWeights(Table &weights) {
+
+
+void Neuron::setWeights(List &weights) {
 
   for (size_t w = 0; w < _connections.size(); w++) {
     _connections[w].weight = weights[w];
   }
 }
+
+
 
 
 void Neuron::feedForward(const Layer &prevLayer) {
@@ -52,10 +58,14 @@ void Neuron::feedForward(const Layer &prevLayer) {
 }
 
 
+
+
 void Neuron::calcGrad(double target) {
 
   _gradient = (target - _value) * Neuron::activationD(_value);
 }
+
+
 
 
 void Neuron::calcHiddenGrad(const Layer &nextLayer) {
@@ -68,6 +78,8 @@ void Neuron::calcHiddenGrad(const Layer &nextLayer) {
 
   _gradient  = sumDOW * Neuron::activationD(_value);
 }
+
+
 
 
 void Neuron::updateWeights(Layer &prevLayer) {
@@ -97,6 +109,8 @@ void Neuron::updateWeights(Layer &prevLayer) {
 double NeuralNetwork::_rAvgSmoothing = stdSMOOTHING;
 
 
+
+
 NeuralNetwork::NeuralNetwork(const vector<uint32_t> &topology) {
 
   _topology = topology;
@@ -105,7 +119,7 @@ NeuralNetwork::NeuralNetwork(const vector<uint32_t> &topology) {
 
   for (size_t l = 0; l < numLayers; l++) {
 
-    _layers.push_back(Layer());
+    _network.push_back(Layer());
 
     uint32_t numOutputs;
     l == _topology.size() - 1
@@ -113,12 +127,14 @@ NeuralNetwork::NeuralNetwork(const vector<uint32_t> &topology) {
       : numOutputs = _topology[l + 1];
 
     for (size_t n = 0; n <= _topology[l]; n++) {
-      _layers.back().push_back(Neuron(numOutputs, n));
+      _network.back().push_back(Neuron(numOutputs, n));
     }
 
-    _layers.back().back().setValue(1.0);      // Set value of bias neuron to 1.0
+    _network.back().back().setValue(1.0);     // Set value of bias neuron to 1.0
   }
 }
+
+
 
 
 NeuralNetwork& NeuralNetwork::begin(double learningRate) {
@@ -127,6 +143,8 @@ NeuralNetwork& NeuralNetwork::begin(double learningRate) {
 
   return *this;
 }
+
+
 
 
 NeuralNetwork& NeuralNetwork::begin(double learningRate, double momentum) {
@@ -138,18 +156,20 @@ NeuralNetwork& NeuralNetwork::begin(double learningRate, double momentum) {
 }
 
 
-NeuralNetwork& NeuralNetwork::feedForward(const Table &input) {
+
+
+NeuralNetwork& NeuralNetwork::feedForward(const List &input) {
 
   for (size_t n = 0; n < input.size(); n++) {
-    _layers[0][n].setValue(input[n]);
+    _network[0][n].setValue(input[n]);
   }
 
-  for (size_t l = 1; l < _layers.size(); l++) {
+  for (size_t l = 1; l < _network.size(); l++) {
 
-    Layer &prevLayer = _layers[l - 1];
+    Layer &prevLayer = _network[l - 1];
 
-    for (size_t n = 0; n < _layers[l].size() - 1; n++) {
-      _layers[l][n].feedForward(prevLayer);
+    for (size_t n = 0; n < _network[l].size() - 1; n++) {
+      _network[l][n].feedForward(prevLayer);
     }
   }
 
@@ -157,10 +177,12 @@ NeuralNetwork& NeuralNetwork::feedForward(const Table &input) {
 }
 
 
-NeuralNetwork& NeuralNetwork::propBack(const Table &target) {
+
+
+NeuralNetwork& NeuralNetwork::propBack(const List &target) {
 
   // Calc overall network error (RMS)
-  Layer &outputLayer = _layers.back();
+  Layer &outputLayer = _network.back();
   _error = 0.0;
 
   for (size_t n = 0; n < outputLayer.size() - 1; n++) {
@@ -184,10 +206,10 @@ NeuralNetwork& NeuralNetwork::propBack(const Table &target) {
 
 
   // Calc gradients in hidden layers
-  for (size_t l = _layers.size() - 2; l > 0; l--) {
+  for (size_t l = _network.size() - 2; l > 0; l--) {
 
-    Layer &hiddenLayer = _layers[l];
-    Layer &nextLayer   = _layers[l + 1];
+    Layer &hiddenLayer = _network[l];
+    Layer &nextLayer   = _network[l + 1];
 
     for (size_t n = 0; n < hiddenLayer.size(); n++) {
       hiddenLayer[n].calcHiddenGrad(nextLayer);
@@ -196,10 +218,10 @@ NeuralNetwork& NeuralNetwork::propBack(const Table &target) {
 
 
   // Update connection weights
-  for (size_t l = _layers.size() - 1; l > 0; l--) {
+  for (size_t l = _network.size() - 1; l > 0; l--) {
 
-    Layer &layer     = _layers[l];
-    Layer &prevLayer = _layers[l - 1];
+    Layer &layer     = _network[l];
+    Layer &prevLayer = _network[l - 1];
 
     for (size_t n = 0; n < layer.size() - 1; n++) {
       layer[n].updateWeights(prevLayer);
@@ -210,14 +232,20 @@ NeuralNetwork& NeuralNetwork::propBack(const Table &target) {
 }
 
 
-NeuralNetwork& NeuralNetwork::train(const TrainingData &data, uint32_t numRuns) {
 
+
+NeuralNetwork& NeuralNetwork::train(const Table &data, uint32_t numRuns) {
+
+  Serial.println( "----------------------------" );
   Serial.println( "----- TRAINING SESSION -----" );
+  Serial.println( "----------------------------" );
   Serial.println(                                );
   Serial.println( "   0%       50%      100%"    );
   Serial.print  ( "   ["                         );
 
   uint32_t duration = millis();
+
+  // Training --------------------------------------
 
   for (size_t run = 0; run < 20; run++) {
 
@@ -225,8 +253,8 @@ NeuralNetwork& NeuralNetwork::train(const TrainingData &data, uint32_t numRuns) 
 
       uint32_t num = random(0, data.size()/2);
 
-      Table input  = data[2*num];
-      Table target = data[2*num + 1];
+      List input  = data[2*num];
+      List target = data[2*num + 1];
 
       // Training sample
       feedForward(input);
@@ -240,16 +268,23 @@ NeuralNetwork& NeuralNetwork::train(const TrainingData &data, uint32_t numRuns) 
     Serial.print("#");                                     // Progress indicator
   }
 
+  // -----------------------------------------------
+
   duration = millis() - duration;
+
+  uint32_t min =  duration/60000;
+  double   sec = (duration%60000)/1000.0;
 
   Serial.println( "]"                            );
   Serial.println( "            DONE"             );
   Serial.println(                                );
   Serial.println( "----------------------------" );
-  Serial.print  ( "    DURATION = "              ); Serial.print  (duration/1000.0); Serial.println(" s");
-  Serial.print  ( "      PASSES = "              ); Serial.println(numRuns        );
-  Serial.print  ( "       ERROR = "              ); Serial.println(_error,     6  );
-  Serial.print  ( "   rAvgERROR = "              ); Serial.println(_rAvgError, 6  );
+  Serial.print  ( "      PASSES = "              ); Serial.println(numRuns);
+  Serial.print  ( "    DURATION = "              ); Serial.print  (min); Serial.print("m "); Serial.print(sec, 1); Serial.println("s");
+  Serial.print  ( "        RATE = "              ); Serial.print  (numRuns*1000/(double)duration); Serial.println("/s");
+  Serial.println( "----------------------------" );
+  Serial.print  ( "       ERROR = "              ); Serial.println(_error,     6);
+  Serial.print  ( "   rAvgERROR = "              ); Serial.println(_rAvgError, 6);
   Serial.println( "----------------------------" );
   Serial.println(                                );
 
@@ -257,18 +292,20 @@ NeuralNetwork& NeuralNetwork::train(const TrainingData &data, uint32_t numRuns) 
 }
 
 
+
+
 NeuralNetwork& NeuralNetwork::memorize() {
 
   // Collect weight of every neuronal connection in the network
 
-  Table memory;
+  List memory;
 
-  for (size_t l = 0; l < _layers.size() - 1; l++) {
+  for (size_t l = 0; l < _network.size() - 1; l++) {
 
-    for (size_t n = 0; n < _layers[l].size(); n++) {    // including bias neuron
+    for (size_t n = 0; n < _network[l].size(); n++) {    // including bias neuron
 
-      Neuron &neuron = _layers[l][n];
-      Table  weights = neuron.getWeights();
+      Neuron &neuron = _network[l][n];
+      List  weights = neuron.getWeights();
 
       for (size_t w = 0; w < weights.size(); w++) {
         memory.push_back(weights[w]);
@@ -276,9 +313,13 @@ NeuralNetwork& NeuralNetwork::memorize() {
     }
   }
 
-  // Write topology & weights to serial port
+  // Write memory size, topology & weights to serial port
 
-  Serial.print("{ // topology = { ");                                // Topology
+  Serial.print("{  //  ");                                        // Memory size
+  Serial.print(memory.size()*64/8000.0);
+  Serial.print(" kB  |  ");
+
+  Serial.print("topology = { ");                                     // Topology
 
   for (size_t i = 0; i < _topology.size(); i++) {
 
@@ -316,18 +357,20 @@ NeuralNetwork& NeuralNetwork::memorize() {
 }
 
 
-NeuralNetwork& NeuralNetwork::recall(const Table &memory) {
+
+
+NeuralNetwork& NeuralNetwork::recall(const List &memory) {
 
   uint32_t tempIndex = 0;
 
-  for (size_t l = 0; l < _layers.size() - 1; l++) {
+  for (size_t l = 0; l < _network.size() - 1; l++) {
 
-    for (size_t n = 0; n < _layers[l].size(); n++) {    // including bias neuron
+    for (size_t n = 0; n < _network[l].size(); n++) {    // including bias neuron
 
-      Neuron   &neuron    = _layers[l][n];
+      Neuron   &neuron    = _network[l][n];
       uint32_t numWeights = neuron.getWeights().size();
 
-      Table weights;
+      List weights;
 
       for (size_t w = 0; w < numWeights; w++) {
 
@@ -343,13 +386,15 @@ NeuralNetwork& NeuralNetwork::recall(const Table &memory) {
 }
 
 
-Table NeuralNetwork::getOutput() const {
 
-  Table output;
 
-  for (size_t n = 0; n < _layers.back().size() - 1; n++) {
+List NeuralNetwork::getOutput() const {
 
-    double value = _layers.back()[n].getValue();
+  List output;
+
+  for (size_t n = 0; n < _network.back().size() - 1; n++) {
+
+    double value = _network.back()[n].getValue();
     output.push_back(value);
   }
 
