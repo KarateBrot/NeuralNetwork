@@ -1,8 +1,7 @@
-#include <NeuralNetwork.h>
+#include "NeuralNetwork.h"
 
 
-
-// ********************************** NEURON ***********************************
+// ================================== NEURON ===================================
 
 double Neuron::eta   = stdETA;
 double Neuron::alpha = stdALPHA;
@@ -13,13 +12,11 @@ Neuron::Neuron(uint32_t numOutputs, uint32_t index) {
   for (size_t connection = 0; connection < numOutputs; connection++) {
 
     _connections.push_back(Connection());
-    _connections.back().weight = random(0, 10000)/10000.0;
+    _connections.back().weight = random(0, 1000000)/1000000.0;
   }
 
   _index = index;
 }
-
-
 
 
 List Neuron::getWeights() const {
@@ -34,16 +31,12 @@ List Neuron::getWeights() const {
 }
 
 
-
-
 void Neuron::setWeights(List &weights) {
 
   for (size_t w = 0; w < _connections.size(); w++) {
     _connections[w].weight = weights[w];
   }
 }
-
-
 
 
 void Neuron::feedForward(const Layer &prevLayer) {
@@ -58,14 +51,10 @@ void Neuron::feedForward(const Layer &prevLayer) {
 }
 
 
-
-
 void Neuron::calcGrad(double target) {
 
   _gradient = (target - _value) * Neuron::activationD(_value);
 }
-
-
 
 
 void Neuron::calcHiddenGrad(const Layer &nextLayer) {
@@ -78,8 +67,6 @@ void Neuron::calcHiddenGrad(const Layer &nextLayer) {
 
   _gradient  = sumDOW * Neuron::activationD(_value);
 }
-
-
 
 
 void Neuron::updateWeights(Layer &prevLayer) {
@@ -99,19 +86,17 @@ void Neuron::updateWeights(Layer &prevLayer) {
   }
 }
 
-// *****************************************************************************
+// ---------------------------------- NEURON -----------------------------------
 
 
 
 
-// ********************************* NETWORK ***********************************
+// ================================== NETWORK ==================================
 
 double NeuralNetwork::_rAvgSmoothing = stdSMOOTHING;
 
 
-
-
-NeuralNetwork::NeuralNetwork(const vector<uint32_t> &topology) {
+NeuralNetwork::NeuralNetwork(const std::vector<uint32_t> &topology) {
 
   _topology = topology;
 
@@ -135,16 +120,12 @@ NeuralNetwork::NeuralNetwork(const vector<uint32_t> &topology) {
 }
 
 
-
-
 NeuralNetwork& NeuralNetwork::begin(double learningRate) {
 
   Neuron::eta = learningRate;
 
   return *this;
 }
-
-
 
 
 NeuralNetwork& NeuralNetwork::begin(double learningRate, double momentum) {
@@ -154,8 +135,6 @@ NeuralNetwork& NeuralNetwork::begin(double learningRate, double momentum) {
 
   return *this;
 }
-
-
 
 
 NeuralNetwork& NeuralNetwork::feedForward(const List &input) {
@@ -177,8 +156,6 @@ NeuralNetwork& NeuralNetwork::feedForward(const List &input) {
 }
 
 
-
-
 NeuralNetwork& NeuralNetwork::propBack(const List &target) {
 
   // Calc overall network error (RMS)
@@ -194,16 +171,13 @@ NeuralNetwork& NeuralNetwork::propBack(const List &target) {
   _error /= outputLayer.size() - 1;
   _error  = sqrt(_error);
 
-
   // Calc recent average error (rAvgError)
   _rAvgError = (_rAvgError * _rAvgSmoothing + _error) / (_rAvgSmoothing + 1.0);
-
 
   // Calc gradients in output layer
   for (size_t n = 0; n < outputLayer.size() - 1; n++) {
     outputLayer[n].calcGrad(target[n]);
   }
-
 
   // Calc gradients in hidden layers
   for (size_t l = _network.size() - 2; l > 0; l--) {
@@ -215,7 +189,6 @@ NeuralNetwork& NeuralNetwork::propBack(const List &target) {
       hiddenLayer[n].calcHiddenGrad(nextLayer);
     }
   }
-
 
   // Update connection weights
   for (size_t l = _network.size() - 1; l > 0; l--) {
@@ -230,8 +203,6 @@ NeuralNetwork& NeuralNetwork::propBack(const List &target) {
 
   return *this;
 }
-
-
 
 
 NeuralNetwork& NeuralNetwork::train(const Table &data, uint32_t numRuns) {
@@ -292,17 +263,14 @@ NeuralNetwork& NeuralNetwork::train(const Table &data, uint32_t numRuns) {
 }
 
 
-
-
 NeuralNetwork& NeuralNetwork::memorize() {
 
   // Collect weight of every neuronal connection in the network
-
   List memory;
 
   for (size_t l = 0; l < _network.size() - 1; l++) {
 
-    for (size_t n = 0; n < _network[l].size(); n++) {    // including bias neuron
+    for (size_t n = 0; n < _network[l].size(); n++) {   // including bias neuron
 
       Neuron &neuron = _network[l][n];
       List  weights = neuron.getWeights();
@@ -314,7 +282,6 @@ NeuralNetwork& NeuralNetwork::memorize() {
   }
 
   // Write memory size, topology & weights to serial port
-
   Serial.print("{  //  ");                                        // Memory size
   Serial.print(memory.size()*64/8000.0);
   Serial.print(" kB  |  ");
@@ -357,15 +324,13 @@ NeuralNetwork& NeuralNetwork::memorize() {
 }
 
 
-
-
 NeuralNetwork& NeuralNetwork::recall(const List &memory) {
 
   uint32_t tempIndex = 0;
 
   for (size_t l = 0; l < _network.size() - 1; l++) {
 
-    for (size_t n = 0; n < _network[l].size(); n++) {    // including bias neuron
+    for (size_t n = 0; n < _network[l].size(); n++) {   // including bias neuron
 
       Neuron   &neuron    = _network[l][n];
       uint32_t numWeights = neuron.getWeights().size();
@@ -386,8 +351,6 @@ NeuralNetwork& NeuralNetwork::recall(const List &memory) {
 }
 
 
-
-
 List NeuralNetwork::getOutput() const {
 
   List output;
@@ -401,4 +364,4 @@ List NeuralNetwork::getOutput() const {
   return output;
 }
 
-// *****************************************************************************
+// ---------------------------------- NETWORK ----------------------------------
