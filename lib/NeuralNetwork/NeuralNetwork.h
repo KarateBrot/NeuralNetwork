@@ -21,15 +21,12 @@
 //                                  TYPEDEFS                                  //
 //############################################################################//
 //----------------------------------------------------------------------------//
-  struct Connection;                                                          //
-  typedef std::vector<Connection> Connections;                                //
-//----------------------------------------------------------------------------//
   class Neuron;                                                               //
-  typedef std::vector<Neuron>     Layer;                                      //
-  typedef std::vector<Layer>      Net;                                        //
+  typedef std::vector<Neuron> Layer;                                          //
+  typedef std::vector<Layer>  Net;                                            //
 //----------------------------------------------------------------------------//
-  typedef std::vector<double>     List;                                       //
-  typedef std::vector<List>       Table;                                      //
+  typedef std::vector<double> List;                                           //
+  typedef std::vector<List>   Table;                                          //
 //----------------------------------------------------------------------------//
 //############################################################################//
 
@@ -40,18 +37,20 @@
 
 struct Connection { double weight, deltaWeight; };
 
+
 class Neuron {
 
-  double      _value;
-  Connections _connections;
-  uint32_t    _index;
-  double      _gradient;
+private:
+  std::vector<Connection> _connections;
+  
+  double   _value;
+  uint32_t _index;
+  double   _gradient;
 
   static double activation (double x) { return tanh(x); }
   static double activationD(double x) { return 1.0/(cosh(x)*cosh(x)); }
 
- public:
-
+public:
   static double eta, alpha;           // eta: "learning rate", alpha: "momentum"
 
   Neuron(uint32_t, uint32_t);
@@ -77,6 +76,7 @@ class Neuron {
 
 class NeuralNetwork {
 
+private:
   Net _network;                                       // layers[#layer][#neuron]
 
   std::vector<uint32_t> _topology;
@@ -84,8 +84,7 @@ class NeuralNetwork {
   double        _error, _rAvgError = 0.5;
   static double _rAvgSmoothing;
 
- public:
-
+public:
   NeuralNetwork(const std::vector<uint32_t> &);
 
   NeuralNetwork& begin(double);
@@ -104,7 +103,6 @@ class NeuralNetwork {
   double getAvgError(void) const { return _rAvgError; }
 
   List getOutput(void) const;
-
 };
 
 // ---------------------------------- NETWORK ----------------------------------

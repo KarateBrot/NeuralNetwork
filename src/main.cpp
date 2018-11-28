@@ -1,8 +1,8 @@
 #include <Arduino.h>
 
 #include <NeuralNetwork.h>
-  #include <Exercises.h>
-  #include <Memories.h>
+  #include <data/Exercises.h>
+  #include <data/Memories.h>
 
 
 #define TOPOLOGY     {16, 4, 4, 1}

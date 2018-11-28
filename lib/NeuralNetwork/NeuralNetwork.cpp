@@ -9,9 +9,13 @@ double Neuron::alpha = stdALPHA;
 
 Neuron::Neuron(uint32_t numOutputs, uint32_t index) {
 
+  // Allocate memory for _connections
+  _connections.reserve(numOutputs);
+
   for (size_t connection = 0; connection < numOutputs; connection++) {
 
-    _connections.push_back(Connection());
+    // Add new connection
+    _connections.emplace_back();
     _connections.back().weight = random(0, 1000000)/1000000.0;
   }
 
@@ -23,7 +27,13 @@ List Neuron::getWeights() const {
 
   List weights;
 
-  for (size_t w = 0; w < _connections.size(); w++) {
+  // Number of weights
+  uint32_t numWeights = _connections.size();
+
+  // Allocate memory for weights
+  weights.reserve(numWeights);
+
+  for (size_t w = 0; w < numWeights; w++) {
     weights.push_back(_connections[w].weight);
   }
 
@@ -96,26 +106,39 @@ void Neuron::updateWeights(Layer &prevLayer) {
 double NeuralNetwork::_rAvgSmoothing = stdSMOOTHING;
 
 
-NeuralNetwork::NeuralNetwork(const std::vector<uint32_t> &topology) {
+NeuralNetwork::NeuralNetwork(const std::vector<uint32_t> &topology) :
 
-  _topology = topology;
+  _topology(topology) {
 
   uint32_t numLayers = _topology.size();
 
+  // Allocate memory for _network
+  _network.reserve(numLayers);
+
   for (size_t l = 0; l < numLayers; l++) {
 
-    _network.push_back(Layer());
+    // Add new layer
+    _network.emplace_back();
 
+    // Get number of neurons (incl. bias neuron) in current layer
+    uint32_t numNeurons = _topology[l] + 1;
+
+    // Allocate memory for current layer
+    _network.back().reserve(numNeurons);
+
+    // Get number of neural outputs for neurons in current layer
     uint32_t numOutputs;
     l == _topology.size() - 1
       ? numOutputs = 0
       : numOutputs = _topology[l + 1];
 
-    for (size_t n = 0; n <= _topology[l]; n++) {
-      _network.back().push_back(Neuron(numOutputs, n));
+    // Add neurons to current layer
+    for (size_t n = 0; n < numNeurons; n++) {
+      _network.back().emplace_back(numOutputs, n);
     }
 
-    _network.back().back().setValue(1.0);     // Set value of bias neuron to 1.0
+    // Set value of bias neuron to 1.0
+    _network.back().back().setValue(1.0);
   }
 }
 
@@ -273,7 +296,7 @@ NeuralNetwork& NeuralNetwork::memorize() {
     for (size_t n = 0; n < _network[l].size(); n++) {   // including bias neuron
 
       Neuron &neuron = _network[l][n];
-      List  weights = neuron.getWeights();
+      List   weights = neuron.getWeights();
 
       for (size_t w = 0; w < weights.size(); w++) {
         memory.push_back(weights[w]);
@@ -337,8 +360,10 @@ NeuralNetwork& NeuralNetwork::recall(const List &memory) {
 
       List weights;
 
-      for (size_t w = 0; w < numWeights; w++) {
+      // Allocate memory for weights
+      weights.reserve(numWeights);
 
+      for (size_t w = 0; w < numWeights; w++) {
         weights.push_back(memory[tempIndex]);
         tempIndex++;
       }
@@ -355,8 +380,13 @@ List NeuralNetwork::getOutput() const {
 
   List output;
 
-  for (size_t n = 0; n < _network.back().size() - 1; n++) {
+  // Number of neurons in output layer (excl. bias neuron)
+  uint32_t numOutputs = _network.back().size() - 1;
 
+  // Allocate memory for output
+  output.reserve(numOutputs);
+
+  for (size_t n = 0; n < numOutputs; n++) {
     double value = _network.back()[n].getValue();
     output.push_back(value);
   }
