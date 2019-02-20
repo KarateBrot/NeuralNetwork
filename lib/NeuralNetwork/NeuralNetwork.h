@@ -47,8 +47,9 @@ private:
   uint32_t _index;
   double   _gradient;
 
-  static double activation (double x) { return tanh(x); }
-  static double activationD(double x) { return 1.0/(cosh(x)*cosh(x)); }
+  // TODO: Pool of activation functions to choose from
+  static double activation (double &x) { return tanh(x); }
+  static double activationD(double  x) { x = cosh(x); return 1.0/(x*x); }
 
 public:
   static double eta, alpha;           // eta: "learning rate", alpha: "momentum"
@@ -104,6 +105,8 @@ public:
 
   List getOutput(void) const;
 };
+
+// TODO: class NeuralNetwork_RBF : public NeuralNetwork
 
 // ---------------------------------- NETWORK ----------------------------------
 

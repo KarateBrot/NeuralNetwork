@@ -16,7 +16,7 @@ Neuron::Neuron(uint32_t numOutputs, uint32_t index) {
 
     // Add new connection
     _connections.emplace_back();
-    _connections.back().weight = random(0, 1000000)/1000000.0;
+    _connections.back().weight = rand()/(double)RAND_MAX;
   }
 
   _index = index;
@@ -132,6 +132,9 @@ NeuralNetwork::NeuralNetwork(const std::vector<uint32_t> &topology) :
       ? numOutputs = 0
       : numOutputs = _topology[l + 1];
 
+    // Give RNG seed a runtime dependent value to (hopefully) introduce non-reproductiveness
+    srand(micros());
+
     // Add neurons to current layer
     for (size_t n = 0; n < numNeurons; n++) {
       _network.back().emplace_back(numOutputs, n);
@@ -245,7 +248,8 @@ NeuralNetwork& NeuralNetwork::train(const Table &data, uint32_t numRuns) {
 
     for (size_t run = 0; run < numRuns/20; run++) {
 
-      uint32_t num = random(0, data.size()/2);
+      // Random number between 0 and data.size/2 (exclusively)
+      uint32_t num = (uint32_t)(rand()/(double)RAND_MAX * (data.size()/2 -1) + 0.5);
 
       List input  = data[2*num];
       List target = data[2*num + 1];
